@@ -1,13 +1,22 @@
 const { SESClient, SendEmailCommand } = require('@aws-sdk/client-ses');
 
 // Initialize SES Client
-const sesClient = new SESClient({
+// If AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are provided, use them
+// Otherwise, use default credential chain (IAM role, environment variables, etc.)
+const sesConfig = {
   region: process.env.AWS_REGION || 'us-east-1',
-  credentials: {
+};
+
+// Only set explicit credentials if both are provided
+// If not provided, AWS SDK will use default credential chain (IAM role, env vars, etc.)
+if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
+  sesConfig.credentials = {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  },
-});
+  };
+}
+
+const sesClient = new SESClient(sesConfig);
 
 /**
  * Send email using AWS SES
