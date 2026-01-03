@@ -4,10 +4,16 @@ FROM node:25-alpine
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY package.json package-lock.json* ./
 
 # Install production dependencies only
-RUN npm ci --only=production && npm cache clean --force
+# Use npm ci if package-lock.json exists, otherwise use npm install
+RUN if [ -f package-lock.json ]; then \
+      npm ci --only=production; \
+    else \
+      npm install --only=production; \
+    fi && \
+    npm cache clean --force
 
 # Copy application files
 COPY . .
