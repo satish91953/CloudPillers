@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// Determine API URL based on environment
+// Determine API URL based on environment (runtime detection)
 // Production: api.cloudpillers.com
 // Development: localhost:5001
 const getApiUrl = () => {
@@ -9,33 +9,69 @@ const getApiUrl = () => {
     return import.meta.env.VITE_API_URL;
   }
   
-  // Check if running in browser
-  if (typeof window !== 'undefined') {
+  // Runtime detection - check if running in browser
+  if (typeof window !== 'undefined' && window.location) {
     const hostname = window.location.hostname;
+    const protocol = window.location.protocol;
     
     // If on cloudpillers.com domain, use api.cloudpillers.com
     if (hostname === 'cloudpillers.com' || hostname === 'www.cloudpillers.com') {
       // Always use HTTPS for production domain
       return 'https://api.cloudpillers.com/api/v1';
     }
+    
+    // If on localhost or 127.0.0.1, use localhost backend
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:5001/api/v1';
+    }
+    
+    // For other domains (like EC2 IP), try to use same host with port 5001
+    // But prefer HTTPS if the frontend is HTTPS
+    if (protocol === 'https:') {
+      return `https://${hostname}:5001/api/v1`;
+    }
+    return `http://${hostname}:5001/api/v1`;
   }
   
   // Default to localhost for local development
   return 'http://localhost:5001/api/v1';
 };
 
-const API_URL = getApiUrl();
-
+// Create axios instance with dynamic baseURL
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: getApiUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 30000, // 30 second timeout
 });
 
-// Request interceptor
+// Request interceptor - set API URL and add auth token
 api.interceptors.request.use(
   (config) => {
+    // Re-evaluate API URL on each request to handle runtime changes
+    if (typeof window !== 'undefined' && window.location) {
+      const hostname = window.location.hostname;
+      const protocol = window.location.protocol;
+      
+      // If on cloudpillers.com domain, always use api.cloudpillers.com
+      if (hostname === 'cloudpillers.com' || hostname === 'www.cloudpillers.com') {
+        config.baseURL = 'https://api.cloudpillers.com/api/v1';
+      } 
+      // If on localhost, use localhost backend
+      else if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        config.baseURL = 'http://localhost:5001/api/v1';
+      } 
+      // For other domains, use same host with port 5001
+      else if (!import.meta.env.VITE_API_URL) {
+        if (protocol === 'https:') {
+          config.baseURL = `https://${hostname}:5001/api/v1`;
+        } else {
+          config.baseURL = `http://${hostname}:5001/api/v1`;
+        }
+      }
+    }
+    
     // Check for admin token first, then regular token
     const adminToken = localStorage.getItem('adminToken');
     const token = localStorage.getItem('token');
@@ -55,6 +91,16 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Log network errors for debugging
+    if (!error.response) {
+      console.error('Network Error:', {
+        message: error.message,
+        baseURL: error.config?.baseURL,
+        url: error.config?.url,
+        fullURL: error.config?.baseURL + error.config?.url,
+      });
+    }
+    
     if (error.response?.status === 401) {
       // Only redirect if it's an admin route
       if (error.config?.url?.includes('/admin')) {
