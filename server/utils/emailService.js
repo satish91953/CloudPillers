@@ -177,8 +177,16 @@ Message:
 ${message}
   `;
 
+  // Get admin email from env, fallback to EMAIL_FROM if ADMIN_EMAIL not set
+  const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_FROM;
+  
+  if (!adminEmail) {
+    console.warn('⚠️ ADMIN_EMAIL not set. Contact notifications will not be sent.');
+    return { success: false, message: 'ADMIN_EMAIL not configured' };
+  }
+
   return sendEmail({
-    to: process.env.ADMIN_EMAIL || process.env.EMAIL_FROM || 'admin@cloudpillers.com',
+    to: adminEmail,
     subject: `New Contact Form Submission from ${name}`,
     html,
     text,

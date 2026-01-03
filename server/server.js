@@ -18,7 +18,9 @@ connectDB();
 const app = express();
 
 // Trust proxy - Required when behind reverse proxy (nginx, load balancer, etc.)
-app.set('trust proxy', true);
+// Only trust the first proxy (nginx-proxy-manager)
+// This is more secure than trusting all proxies
+app.set('trust proxy', 1);
 
 // Security middleware
 app.use(helmet());
