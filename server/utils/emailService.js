@@ -290,8 +290,16 @@ Email: ${email}
 ${company ? `Company: ${company}\n` : ''}${companySize ? `Company Size: ${companySize}\n` : ''}${currentCloudSpend ? `Current Cloud Spend: ${currentCloudSpend}\n` : ''}${services && services.length > 0 ? `Services: ${services.join(', ')}\n` : ''}${timeline ? `Timeline: ${timeline}\n` : ''}${budget ? `Budget: ${budget}\n` : ''}${additionalInfo ? `Additional Info: ${additionalInfo}\n` : ''}
   `;
 
+  // Get admin email from env, fallback to EMAIL_FROM if ADMIN_EMAIL not set
+  const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_FROM;
+  
+  if (!adminEmail) {
+    console.warn('⚠️ ADMIN_EMAIL not set. Assessment notifications will not be sent.');
+    return { success: false, message: 'ADMIN_EMAIL not configured' };
+  }
+
   return sendEmail({
-    to: process.env.ADMIN_EMAIL || process.env.EMAIL_FROM || 'admin@cloudpillers.com',
+    to: adminEmail,
     subject: `New Assessment Request from ${name}${company ? ` - ${company}` : ''}`,
     html,
     text,
