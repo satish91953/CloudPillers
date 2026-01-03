@@ -15,8 +15,8 @@ const getApiUrl = () => {
     
     // If on cloudpillers.com domain, use api.cloudpillers.com
     if (hostname === 'cloudpillers.com' || hostname === 'www.cloudpillers.com') {
-      const protocol = window.location.protocol;
-      return `${protocol}//api.cloudpillers.com/api/v1`;
+      // Always use HTTPS for production domain
+      return 'https://api.cloudpillers.com/api/v1';
     }
   }
   

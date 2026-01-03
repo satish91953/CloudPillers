@@ -97,7 +97,24 @@ const Contact = () => {
     } catch (error) {
       setSubmitStatus('error');
       console.error('Error submitting form:', error);
-      // Could display error.message from API response
+      
+      // Log detailed error for debugging
+      if (error.response) {
+        // Server responded with error status
+        console.error('Response error:', error.response.data);
+        console.error('Status:', error.response.status);
+        console.error('API URL used:', API_URL);
+      } else if (error.request) {
+        // Request made but no response received
+        console.error('No response received:', error.request);
+        console.error('API URL attempted:', API_URL);
+        console.error('Current hostname:', window.location.hostname);
+        console.error('Current protocol:', window.location.protocol);
+      } else {
+        // Error setting up request
+        console.error('Request setup error:', error.message);
+        console.error('API URL:', API_URL);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -255,11 +272,24 @@ const Contact = () => {
                     animate={{ opacity: 1, scale: 1 }}
                     className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700"
                   >
-                    <div className="flex items-center">
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-start">
+                      <svg className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
-                      Something went wrong. Please try again or contact us directly.
+                      <div>
+                        <p className="font-semibold mb-1">Something went wrong</p>
+                        <p className="text-sm">
+                          Please try again or contact us directly at{' '}
+                          <a href="mailto:contact@cloudpillers.com" className="underline hover:text-red-800">
+                            contact@cloudpillers.com
+                          </a>
+                        </p>
+                        {process.env.NODE_ENV === 'development' && (
+                          <p className="text-xs mt-2 opacity-75">
+                            Check browser console for detailed error information.
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </motion.div>
                 )}
