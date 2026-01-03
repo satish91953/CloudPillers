@@ -99,21 +99,22 @@ const Contact = () => {
       console.error('Error submitting form:', error);
       
       // Log detailed error for debugging
+      const apiBaseURL = api.defaults.baseURL;
       if (error.response) {
         // Server responded with error status
         console.error('Response error:', error.response.data);
         console.error('Status:', error.response.status);
-        console.error('API URL used:', API_URL);
+        console.error('API URL used:', apiBaseURL);
       } else if (error.request) {
         // Request made but no response received
         console.error('No response received:', error.request);
-        console.error('API URL attempted:', API_URL);
+        console.error('API URL attempted:', apiBaseURL);
         console.error('Current hostname:', window.location.hostname);
         console.error('Current protocol:', window.location.protocol);
       } else {
         // Error setting up request
         console.error('Request setup error:', error.message);
-        console.error('API URL:', API_URL);
+        console.error('API URL:', apiBaseURL);
       }
     } finally {
       setIsSubmitting(false);
