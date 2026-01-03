@@ -27,18 +27,20 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Compression
 app.use(compression());
 
-// CORS - Allow multiple origins for flexibility
-const allowedOrigins = process.env.CLIENT_URL 
-  ? process.env.CLIENT_URL.split(',').map(url => url.trim())
-  : ['http://localhost:3001'];
+// CORS - Allow both production domain and localhost
+const allowedOrigins = [
+  'https://cloudpillers.com',
+  'https://www.cloudpillers.com',
+  'http://cloudpillers.com',
+  'http://www.cloudpillers.com',
+  'http://localhost:3001',
+  'http://127.0.0.1:3001',
+];
 
-// Add common EC2/local network patterns
-if (process.env.NODE_ENV === 'production') {
-  // Allow requests from same host (for EC2 deployments)
-  allowedOrigins.push((origin) => {
-    // Allow same origin requests
-    return true;
-  });
+// Add CLIENT_URL from env if provided
+if (process.env.CLIENT_URL) {
+  const clientUrls = process.env.CLIENT_URL.split(',').map(url => url.trim());
+  allowedOrigins.push(...clientUrls);
 }
 
 app.use(
@@ -52,18 +54,9 @@ app.use(
         return callback(null, true);
       }
       
-      // For production, allow any origin from same hostname pattern
-      if (process.env.NODE_ENV === 'production') {
-        // Extract hostname from origin
-        try {
-          const originHost = new URL(origin).hostname;
-          // Allow if it's not localhost/127.0.0.1 (i.e., EC2 IP or domain)
-          if (originHost !== 'localhost' && originHost !== '127.0.0.1') {
-            return callback(null, true);
-          }
-        } catch (e) {
-          // Invalid origin URL, reject
-        }
+      // For development, allow localhost variations
+      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        return callback(null, true);
       }
       
       callback(new Error('Not allowed by CORS'));

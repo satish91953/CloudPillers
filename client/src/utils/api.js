@@ -1,22 +1,22 @@
 import axios from 'axios';
 
 // Determine API URL based on environment
-// In production (EC2), use the same host with port 5001
-// In development, use localhost or VITE_API_URL
+// Production: api.cloudpillers.com
+// Development: localhost:5001
 const getApiUrl = () => {
   // If VITE_API_URL is explicitly set, use it
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
   
-  // If running in browser, detect the current host
+  // Check if running in browser
   if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    const protocol = window.location.protocol;
+    const hostname = window.location.hostname;
     
-    // If not localhost, use the same host with backend port
-    if (host !== 'localhost' && host !== '127.0.0.1') {
-      return `${protocol}//${host}:5001/api/v1`;
+    // If on cloudpillers.com domain, use api.cloudpillers.com
+    if (hostname === 'cloudpillers.com' || hostname === 'www.cloudpillers.com') {
+      const protocol = window.location.protocol;
+      return `${protocol}//api.cloudpillers.com/api/v1`;
     }
   }
   
