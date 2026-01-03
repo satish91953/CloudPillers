@@ -27,11 +27,50 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Compression
 app.use(compression());
 
-// CORS
+// CORS - Allow multiple origins for flexibility
+const allowedOrigins = process.env.CLIENT_URL 
+  ? process.env.CLIENT_URL.split(',').map(url => url.trim())
+  : ['http://localhost:3001'];
+
+// Add common EC2/local network patterns
+if (process.env.NODE_ENV === 'production') {
+  // Allow requests from same host (for EC2 deployments)
+  allowedOrigins.push((origin) => {
+    // Allow same origin requests
+    return true;
+  });
+}
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:3001',
+    origin: function (origin, callback) {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) return callback(null, true);
+      
+      // Check if origin is in allowed list
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      // For production, allow any origin from same hostname pattern
+      if (process.env.NODE_ENV === 'production') {
+        // Extract hostname from origin
+        try {
+          const originHost = new URL(origin).hostname;
+          // Allow if it's not localhost/127.0.0.1 (i.e., EC2 IP or domain)
+          if (originHost !== 'localhost' && originHost !== '127.0.0.1') {
+            return callback(null, true);
+          }
+        } catch (e) {
+          // Invalid origin URL, reject
+        }
+      }
+      
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
 

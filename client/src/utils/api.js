@@ -1,6 +1,30 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api/v1';
+// Determine API URL based on environment
+// In production (EC2), use the same host with port 5001
+// In development, use localhost or VITE_API_URL
+const getApiUrl = () => {
+  // If VITE_API_URL is explicitly set, use it
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // If running in browser, detect the current host
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    const protocol = window.location.protocol;
+    
+    // If not localhost, use the same host with backend port
+    if (host !== 'localhost' && host !== '127.0.0.1') {
+      return `${protocol}//${host}:5001/api/v1`;
+    }
+  }
+  
+  // Default to localhost for local development
+  return 'http://localhost:5001/api/v1';
+};
+
+const API_URL = getApiUrl();
 
 const api = axios.create({
   baseURL: API_URL,
